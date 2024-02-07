@@ -1,4 +1,7 @@
 using AppCheckBackend.Context;
+using AppCheckBackend.Middleware;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.EntityFrameworkCore;
 
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
@@ -25,6 +28,14 @@ builder.Services.AddDbContext<LocalContext>(options =>
 
 var app = builder.Build();
 
+string fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Credentials.json");
+
+FirebaseApp firebaseApp = FirebaseApp.Create(new AppOptions()
+{
+    Credential = GoogleCredential.FromFile(fullPath),
+    ProjectId = configuration.GetValue<string>("FirebaseProjectId"),
+});
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -39,6 +50,8 @@ app.UseRouting();
 app.UseCors(MyAllowSpecificOrigins);
 
 app.UseAuthorization();
+
+app.UseMiddleware<AppcheckMiddleware>(firebaseApp);
 
 app.MapControllers();
 
