@@ -24,16 +24,14 @@ builder.Services.AddCors(c =>
 
 var configuration = builder.Configuration;
 builder.Services.AddDbContext<LocalContext>(options =>
-    options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlite(configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 
-string fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Credentials.json");
-
 FirebaseApp firebaseApp = FirebaseApp.Create(new AppOptions()
 {
-    Credential = GoogleCredential.FromFile(fullPath),
-    ProjectId = configuration.GetValue<string>("FirebaseProjectId"),
+    Credential = GoogleCredential.FromFile("Credentials.json"),
+    ProjectId = "appcheckmvp",
 });
 
 // Configure the HTTP request pipeline.
@@ -51,7 +49,7 @@ app.UseCors(MyAllowSpecificOrigins);
 
 app.UseAuthorization();
 
-app.UseMiddleware<AppcheckMiddleware>(firebaseApp);
+app.UseAppCheckMiddleware(firebaseApp);
 
 app.MapControllers();
 

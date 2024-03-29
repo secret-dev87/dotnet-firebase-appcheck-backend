@@ -1,29 +1,32 @@
 ﻿using FirebaseAdmin;
 using FirebaseAdmin.AppCheck;
-using System.Net;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using System.Threading.Tasks;
 
 namespace AppCheckBackend.Middleware
 {
-    public class AppcheckMiddleware
+    // You may need to install the Microsoft.AspNetCore.Http.Abstractions package into your project
+    public class AppCheckMiddleware
     {
         private readonly RequestDelegate _next;
         private readonly FirebaseApp _firebaseApp;
 
-        public AppcheckMiddleware(RequestDelegate next, FirebaseApp firebaseApp)
+        public AppCheckMiddleware(RequestDelegate next, FirebaseApp firebaseApp)
         {
             _next = next;
             _firebaseApp = firebaseApp;
         }
 
-        public async Task InvokeAsync(HttpContext context)
+        public async Task Invoke(HttpContext httpContext)
         {
-            var appCheckToken = context.Request.Headers.FirstOrDefault(x => x.Key == "X-Firebase-AppCheck").Value.ToString();
+
+            var appCheckToken = httpContext.Request.Headers.FirstOrDefault(x => x.Key == "X-Firebase-AppCheck").Value.ToString();
 
             if (String.IsNullOrEmpty(appCheckToken))
             {
-                context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                await context.Response.WriteAsync("Firebase App Check Token is missed");
-                return;
+                httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await httpContext.Response.WriteAsync("Firebase AppCheck Token is missed.");
             }
 
             try
@@ -34,19 +37,28 @@ namespace AppCheckBackend.Middleware
 
                 if (appCheckClaims == null)
                 {
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    await context.Response.WriteAsync("Firebase AppCheck Token is not valid.");
-                    return;
+                    httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    await httpContext.Response.WriteAsync("Firebase AppCheck Token is invalid.");
                 }
-
-                await _next(context);
+                else
+                {
+                    await _next(httpContext);
+                }
             }
             catch (Exception ex)
             {
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                await context.Response.WriteAsync($"{ex.Message}");
-                return;
+                httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                await httpContext.Response.WriteAsync($"{ex.Message}");
             }
+        }
+    }
+
+    // Extension method used to add the middleware to the HTTP request pipeline.
+    public static class AppCheckMiddlewareExtensions
+    {
+        public static IApplicationBuilder UseAppCheckMiddleware(this IApplicationBuilder builder, FirebaseApp firebaseApp)
+        {
+            return builder.UseMiddleware<AppCheckMiddleware>(firebaseApp);
         }
     }
 }
