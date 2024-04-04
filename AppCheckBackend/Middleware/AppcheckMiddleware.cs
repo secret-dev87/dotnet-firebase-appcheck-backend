@@ -20,35 +20,36 @@ namespace AppCheckBackend.Middleware
 
         public async Task Invoke(HttpContext httpContext)
         {
-
-            var appCheckToken = httpContext.Request.Headers.FirstOrDefault(x => x.Key == "X-Firebase-AppCheck").Value.ToString();
+            var appCheckToken = httpContext.Request.Headers.FirstOrDefault(x => x.Key.ToLower() == "x-firebase-appcheck").Value.ToString();
 
             if (String.IsNullOrEmpty(appCheckToken))
             {
                 httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 await httpContext.Response.WriteAsync("Firebase AppCheck Token is missed.");
             }
-
-            try
+            else
             {
-                FirebaseAppCheck appCheck = FirebaseAppCheck.GetAppCheck(_firebaseApp);
-
-                var appCheckClaims = await appCheck.VerifyTokenAsync(appCheckToken);
-
-                if (appCheckClaims == null)
+                try
                 {
-                    httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    await httpContext.Response.WriteAsync("Firebase AppCheck Token is invalid.");
+                    FirebaseAppCheck appCheck = FirebaseAppCheck.GetAppCheck(_firebaseApp);
+
+                    var appCheckClaims = await appCheck.VerifyTokenAsync(appCheckToken);
+
+                    if (appCheckClaims == null)
+                    {
+                        httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        await httpContext.Response.WriteAsync("Firebase AppCheck Token is invalid.");
+                    }
+                    else
+                    {
+                        await _next(httpContext);
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    await _next(httpContext);
+                    httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                    await httpContext.Response.WriteAsync($"{ex.Message}");
                 }
-            }
-            catch (Exception ex)
-            {
-                httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                await httpContext.Response.WriteAsync($"{ex.Message}");
             }
         }
     }

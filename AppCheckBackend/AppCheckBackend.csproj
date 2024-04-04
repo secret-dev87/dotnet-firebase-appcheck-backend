@@ -26,15 +26,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="FirebaseAdmin">
-      <HintPath>FirebaseAdmin.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\..\firebase-admin-dotnet\FirebaseAdmin\FirebaseAdmin\FirebaseAdmin.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="Credentials.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <Reference Include="FirebaseAdmin">
+      <HintPath>FirebaseAdmin.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

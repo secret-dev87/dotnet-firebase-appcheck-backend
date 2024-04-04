@@ -28,9 +28,11 @@ builder.Services.AddDbContext<LocalContext>(options =>
 
 var app = builder.Build();
 
+var credential = GoogleCredential.FromFile("Credentials.json");
+
 FirebaseApp firebaseApp = FirebaseApp.Create(new AppOptions()
 {
-    Credential = GoogleCredential.FromFile("Credentials.json"),
+    Credential = credential,
     ProjectId = "appcheckmvp",
 });
 
